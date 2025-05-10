@@ -7,6 +7,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define DEFAULT_PORT 8080
+int verbose = 0; // sorry, trying to figure out how to pass to handleConnection
+
 void* handleConnection(void* arg) {
     int client_fd = *(int*)arg;
     free(arg);
@@ -16,6 +19,8 @@ void* handleConnection(void* arg) {
 
     while ((bytes_read = read(client_fd, buffer, sizeof(buffer) - 1)) > 0) {
         buffer[bytes_read] = '\0';
+        if (verbose)
+            printf("%s", buffer);
         write(client_fd, buffer, bytes_read);  // Echo back
     }
 
@@ -24,15 +29,23 @@ void* handleConnection(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <port>\n", argv[0]);
-        return 1;
+    int port    = DEFAULT_PORT;
+
+    for (int ix = 1; ix < argc; ++ix) {
+        if (strcmp(argv[ix], "-p") == 0) {
+            port = atoi(argv[ix + 1]);
+            ix++;
+        } else if (strcmp(argv[ix], "-v") == 0) {
+            verbose = 1;
+        }
     }
 
-    int port = atoi(argv[1]);
-    printf("Welcome to echo\n");
+    if (verbose)
+        printf("Verbose mode enabled\n");
 
-    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    fprintf(stderr, "Listening on port %d\n", port);
+
+    int socket_fd = socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
         perror("socket");
         return 1;
@@ -43,8 +56,6 @@ int main(int argc, char* argv[]) {
     socket_address.sin_family      = AF_INET;
     socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
     socket_address.sin_port        = htons(port);
-
-    printf("Binding to port %d\n", port);
 
     if (bind(socket_fd, (struct sockaddr*)&socket_address,
              sizeof(socket_address)) < 0) {
