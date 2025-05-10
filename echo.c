@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define DEFAULT_PORT 8080
+#define DEFAULT_PORT 80
 int verbose = 0; // sorry, trying to figure out how to pass to handleConnection
 
 void* handleConnection(void* arg) {
